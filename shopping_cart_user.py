@@ -11,12 +11,6 @@ def create_connection(db_file):
     return conn
 
 
-def get_product_by_id(conn, product_id):
-    """Fetch a single product by its ID from the database"""
-    sql = ''' SELECT * FROM products WHERE product_id = ? '''
-    cur = conn.cursor()
-    cur.execute(sql, (product_id,))
-    return cur.fetchone()  # Returns a tuple of the product details
 
 
 def get_all_products(conn):
@@ -38,6 +32,8 @@ def display_products():
         print("No products found.")
     conn.close()  # Remember to close the connection when done
 
+class Product:
+    pass    
 
 class Customer:
     def __init__(self, name, email):
@@ -71,7 +67,13 @@ class ShoppingCart:
 
     def add_product(self, product_id, quantity=1):
         conn = self.owner.conn
-        product = get_product_by_id(conn, product_id)
+
+        """Fetch a single product by its ID from the database"""
+        sql = ''' SELECT * FROM products WHERE product_id = ? '''
+        cur = self.owner.conn.cursor()
+        cur.execute(sql, (product_id,))
+        product = cur.fetchone()  # Returns a tuple of the product details
+
         if product:
             """Add a product to the cart by its ID"""
             if product_id in self.products:
