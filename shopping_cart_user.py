@@ -29,22 +29,14 @@ class Database(metaclass=SingletonMeta):
         self.conn = None
 
         try:
-            self.conn = sqlite3.connect(self.db_file)
+            self.conn = sqlite3.connect(self.db_file, check_same_thread=False)
         except sqlite3.Error as e:
+            print('Sqlite3 error:')
             print(e)
 
 
-def create_connection(db_file):
-    """Create a database connection to the SQLite database specified by db_file"""
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-    except sqlite3.Error as e:
-        print(e)
-    return conn
-
-
-def get_all_products(conn):
+def get_all_products():
+    conn = Database().conn
     """Fetch all products from the products table"""
     sql = ''' SELECT * FROM products '''
     cur = conn.cursor()
@@ -52,17 +44,17 @@ def get_all_products(conn):
     return cur.fetchall()  # This returns a list of tuples
 
 def display_products():
-    conn = Database().conn
-
-    products = get_all_products(conn)
+    to_return = ''
+    products = get_all_products()
     if products:
-        print(f"{'ID':<10}{'Name':<20}{'Description':<30}{'Price':<10}")
+        to_return+=f"{'ID':<10}{'Name':<20}{'Description':<30}{'Price':<10}\n"
         for product in products:
             product_id, name, description, price = product
-            print(f"{product_id:<10}{name:<20}{description:<30}{price:<10.2f}")
+            to_return+=f"{product_id:<10}{name:<20}{description:<30}{price:<10.2f}\n"
     else:
-        print("No products found.")
-    conn.close()  # Remember to close the connection when done
+        to_return+="No products found.\n"
+    return to_return
+
 
 class Product:
     pass    
@@ -99,10 +91,11 @@ class ShoppingCart:
 
     def add_product(self, product_id, quantity=1):
         conn = self.owner.conn
+        to_return = ''
 
         """Fetch a single product by its ID from the database"""
         sql = ''' SELECT * FROM products WHERE product_id = ? '''
-        cur = self.owner.conn.cursor()
+        cur = conn.cursor()
         cur.execute(sql, (product_id,))
         product = cur.fetchone()  # Returns a tuple of the product details
 
@@ -113,9 +106,10 @@ class ShoppingCart:
             else:
                 self.products[product_id] = quantity
             
-            print(f"Added {quantity} of {product[1]} to the cart.")
+
+            to_return+=f"Added {quantity} of {product[1]} to the cart."
         else:
-            print("Product not found.")
+            to_return+="Product not found."
 
         
 
@@ -150,6 +144,6 @@ class ShoppingCart:
 
 
 # sprawić aby klasa product była używana w shopping cart
-# połączenie do bazy powinno być jako singleton? ewentualnie za każdym razem kończyć połączenie do bazy
+# sprawdzić bezpieczeństwo połączenia z bazą
 # dodać nowy main.py interfejs do web appki (streamlit?)
 # postawić interface na dockerze?
