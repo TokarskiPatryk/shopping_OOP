@@ -36,6 +36,7 @@ if __name__ == "__main__":
             clear()
             total = customer.shopping_cart.calculate_total()
             print(f"Paid: {total:.2f}")
+#TODO delete all products from cart
         elif choice == '5':
             clear()
             break

@@ -1,5 +1,38 @@
+from __future__ import annotations
+from threading import Lock, Thread
+from typing import Optional
 
 import sqlite3
+
+
+
+class SingletonMeta(type):
+    """
+    This is a thread-safe implementation of Singleton.
+    """
+
+    _instance: Optional[Database] = None
+
+    _lock: Lock = Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = super().__call__(*args, **kwargs)
+        return cls._instance
+
+
+class Database(metaclass=SingletonMeta):
+
+    def __init__(self, db_file: str = 'sklep') -> None:
+        self.db_file = db_file
+        self.conn = None
+
+        try:
+            self.conn = sqlite3.connect(self.db_file)
+        except sqlite3.Error as e:
+            print(e)
+
 
 def create_connection(db_file):
     """Create a database connection to the SQLite database specified by db_file"""
@@ -11,8 +44,6 @@ def create_connection(db_file):
     return conn
 
 
-
-
 def get_all_products(conn):
     """Fetch all products from the products table"""
     sql = ''' SELECT * FROM products '''
@@ -21,7 +52,8 @@ def get_all_products(conn):
     return cur.fetchall()  # This returns a list of tuples
 
 def display_products():
-    conn = create_connection("sklep")
+    conn = Database().conn
+
     products = get_all_products(conn)
     if products:
         print(f"{'ID':<10}{'Name':<20}{'Description':<30}{'Price':<10}")
@@ -41,7 +73,7 @@ class Customer:
         self.email = email
         self.shopping_cart = ShoppingCart(self)
 
-        self.conn = create_connection("sklep")
+        self.conn = Database().conn
         cur = self.conn.cursor()
         sql = ''' SELECT name, email
                     FROM users
@@ -119,4 +151,5 @@ class ShoppingCart:
 
 # sprawić aby klasa product była używana w shopping cart
 # połączenie do bazy powinno być jako singleton? ewentualnie za każdym razem kończyć połączenie do bazy
-
+# dodać nowy main.py interfejs do web appki (streamlit?)
+# postawić interface na dockerze?
